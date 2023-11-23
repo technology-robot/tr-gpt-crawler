@@ -4,6 +4,7 @@ import { readFile, writeFile } from "fs/promises";
 import { glob } from "glob";
 import { Config } from "./config.js";
 import { Page } from "playwright";
+import micromatch from 'micromatch';
 
 let pageCounter = 0;
 
@@ -23,7 +24,21 @@ export function getPageHtml(page: Page, selector = "body") {
     } else {
       // Handle as a CSS selector
       const el = document.querySelector(selector) as HTMLElement | null;
-      return el?.innerText || "";
+      let content = el?.textContent || "";
+
+      // if (el) {  // also parse the images
+      //   let images = el.querySelectorAll("img");
+
+      //   if (images.length > 0) {
+      //     content += "\n---\nImages found in the page:\n"
+      //     for (let image of images) {
+      //       content += `\n- ${image.alt}\n`
+      //     }
+      //   }
+      // }
+
+
+      return content;
     }
   }, selector);
 }
@@ -52,6 +67,12 @@ export async function crawl(config: Config) {
     const crawler = new PlaywrightCrawler({
       // Use the requestHandler to process each of the crawled pages.
       async requestHandler({ request, page, enqueueLinks, log, pushData }) {
+        // test to output the text or not
+        var getText = true;
+        if (request.loadedUrl && config.match) {
+          getText = micromatch.isMatch(request.loadedUrl, config.match);
+        }
+
         if (config.cookie) {
           // Set the cookie for the specific URL
           const cookie = {
@@ -62,31 +83,41 @@ export async function crawl(config: Config) {
           await page.context().addCookies([cookie]);
         }
 
-        const title = await page.title();
         pageCounter++;
+        const title = await page.title();
         log.info(
-          `Crawling: Page ${pageCounter} / ${config.maxPagesToCrawl} - URL: ${request.loadedUrl}...`
+          `Crawling: Page ${pageCounter} / ${config.maxPagesToCrawl} - URL: ${request.loadedUrl}... ${(getText) ? "with text" : ""}`
         );
 
-        // Use custom handling for XPath selector
-        if (config.selector) {
-          if (config.selector.startsWith("/")) {
-            await waitForXPath(
-              page,
-              config.selector,
-              config.waitForSelectorTimeout ?? 1000
-            );
-          } else {
-            await page.waitForSelector(config.selector, {
-              timeout: config.waitForSelectorTimeout ?? 1000,
-            });
+        if (getText) {
+          // Use custom handling for XPath selector
+          if (config.selector) {
+            if (config.selector.startsWith("/")) {
+              await waitForXPath(
+                page,
+                config.selector,
+                config.waitForSelectorTimeout ?? 1000
+              );
+            } else {
+              try {
+                await page.waitForSelector(config.selector, {
+                  timeout: config.waitForSelectorTimeout ?? 1000,
+                });
+              } catch (e) {
+
+              }
+            }
+          }
+
+          let html = await getPageHtml(page, config.selector);
+          html = html.replace(/\n\s+/g, '\n');
+          html = html.trim();
+
+          if (html != "") {
+            // Save results as JSON to ./storage/datasets/default
+            await pushData({ title, url: request.loadedUrl, html });
           }
         }
-
-        const html = await getPageHtml(page, config.selector);
-
-        // Save results as JSON to ./storage/datasets/default
-        await pushData({ title, url: request.loadedUrl, html });
 
         if (config.onVisitPage) {
           await config.onVisitPage({ page, pushData });
@@ -96,7 +127,7 @@ export async function crawl(config: Config) {
         // and add them to the crawling queue.
         await enqueueLinks({
           globs:
-            typeof config.match === "string" ? [config.match] : config.match,
+            typeof config.matchToCrawl === "string" ? [config.matchToCrawl] : config.matchToCrawl,
         });
       },
       // Comment this option to scrape the full website.

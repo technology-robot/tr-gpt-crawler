@@ -13,6 +13,7 @@ export type Config = {
    * @default ""
    */
   match: string | string[];
+  matchToCrawl?: string | string[];
   /**
    * Selector to grab the inner text from
    * @example ".docs-builder-container"
