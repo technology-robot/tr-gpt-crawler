@@ -1,51 +1,42 @@
-# Specify the base Docker image. You can read more about
-# the available images at https://crawlee.dev/docs/guides/docker-images
-# You can also use any other image from Docker Hub.
-FROM apify/actor-node-playwright-chrome:18 AS builder
+FROM ubuntu:jammy
 
-# Copy just package.json and package-lock.json
-# to speed up the build using Docker layer cache.
-COPY --chown=myuser package*.json ./
+# Install Git
+RUN apt-get update && \
+    apt-get install sudo -y && \
+    apt-get install git -y
 
-# Install all dependencies. Don't audit to speed up the installation.
-RUN npm install --include=dev --audit=false
+# Install Docker
+RUN apt-get install ca-certificates curl gnupg -y && \
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg && \
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null && \
+    apt-get update && \
+    apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
 
-# Next, copy the source files using the user set
-# in the base image.
-COPY --chown=myuser . ./
+# Install Nodejs v20 npm
+RUN sudo apt-get update && \
+    sudo apt-get install -y ca-certificates curl gnupg && \
+    sudo mkdir -p /etc/apt/keyrings && \
+    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg 
 
-# Install all dependencies and build the project.
-# Don't audit to speed up the installation.
-RUN npm run build
+RUN echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list && \
+    sudo apt-get update && \
+    sudo apt-get install nodejs -y
 
-# Create final image
-FROM apify/actor-node-playwright-chrome:18
+# # Install gpt-crawler
+# RUN cd /home && git clone https://github.com/builderio/gpt-crawler && cd gpt-crawler && \
+#     npm i && \
+#     npx playwright install && \
+#     npx playwright install-deps
 
-# Copy only built JS files from builder image
-COPY --from=builder --chown=myuser /home/myuser/dist ./dist
+# # Directory to mount in the docker container to get the output.json data
+# RUN cd /home && mkdir data
 
-# Copy just package.json and package-lock.json
-# to speed up the build using Docker layer cache.
-COPY --chown=myuser package*.json ./
+RUN sudo apt-get update && sudo apt-get install python3 python3-pip -y
 
-# Install NPM packages, skip optional and development dependencies to
-# keep the image small. Avoid logging too much and print the dependency
-# tree for debugging
-RUN npm --quiet set progress=false \
-    && npm install --omit=dev --omit=optional \
-    && echo "Installed NPM packages:" \
-    && (npm list --omit=dev --all || true) \
-    && echo "Node.js version:" \
-    && node --version \
-    && echo "NPM version:" \
-    && npm --version
+COPY . .
 
-# Next, copy the remaining files and directories with the source code.
-# Since we do this after NPM install, quick build will be really fast
-# for most source file changes.
-COPY --chown=myuser . ./
+RUN pip3 install -r requirements.txt
 
+ENTRYPOINT [ "/bin/bash", "-c" ]
 
-# Run the image. If you know you won't need headful browsers,
-# you can remove the XVFB start script for a micro perf gain.
-CMD ./start_xvfb_and_run_cmd.sh && npm run start:prod --silent
+CMD [ "crawl.sh", "jsons/rewe-2023-12-11.json", "outputs/rewe-2023-12-11.csv" ]

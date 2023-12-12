@@ -1,15 +1,49 @@
 // For more information, see https://crawlee.dev/
 import { PlaywrightCrawler } from "crawlee";
-import { readFile, writeFile } from "fs/promises";
+import { FileHandle, readFile, writeFile } from "fs/promises";
 import { glob } from "glob";
 import { Config } from "./config.js";
 import { Page } from "playwright";
 import micromatch from 'micromatch';
+import { PathLike } from "fs";
+import { exit } from "process";
 
 let pageCounter = 0;
 
 export function getPageHtml(page: Page, selector = "body") {
   return page.evaluate((selector) => {
+    // function parseText(element: HTMLElement | Node | null) {
+    //   var text = "";
+    
+    //   if (element != null) {
+    //     for (var i = 0; i < element.childNodes.length; ++i)
+    //       if (element.childNodes[i].nodeType === Node.TEXT_NODE)
+    //         text += element.childNodes[i].textContent + '\n';
+    //   }
+    //   return "asdfadfasdf";
+    // }
+
+    function textContent(rootNode: HTMLElement | Node | null) : string {
+      var result = "";
+      
+      if (rootNode != null) {
+        var childNodes = rootNode.childNodes,
+            len = childNodes.length,
+            result = '';
+        
+        for (var i = 0; i < len; i++) {
+          if (childNodes[i].nodeType === Node.TEXT_NODE)
+            result += childNodes[i].nodeValue + "\n";
+          else if (childNodes[i].nodeType === Node.ELEMENT_NODE)
+            if (!(childNodes[i] instanceof HTMLScriptElement)) {
+              result += textContent(childNodes[i]);
+            }
+        }
+      }
+    
+      return result;
+    }
+
     // Check if the selector is an XPath
     if (selector.startsWith("/")) {
       const elements = document.evaluate(
@@ -23,9 +57,9 @@ export function getPageHtml(page: Page, selector = "body") {
       return result ? result.textContent || "" : "";
     } else {
       // Handle as a CSS selector
-      const el = document.querySelector(selector) as HTMLElement | null;
-      let content = el?.textContent || "";
-
+      const element = document.querySelector(selector) as HTMLElement | null;
+      let content = textContent(element);
+      
       // if (el) {  // also parse the images
       //   let images = el.querySelectorAll("img");
 
@@ -36,7 +70,6 @@ export function getPageHtml(page: Page, selector = "body") {
       //     }
       //   }
       // }
-
 
       return content;
     }
@@ -132,6 +165,7 @@ export async function crawl(config: Config) {
       },
       // Comment this option to scrape the full website.
       maxRequestsPerCrawl: config.maxPagesToCrawl,
+      retryOnBlocked: true
       // Uncomment this option to see the browser window.
       // headless: false,
     });
@@ -142,7 +176,7 @@ export async function crawl(config: Config) {
 }
 
 export async function write(config: Config) {
-  const jsonFiles = await glob("storage/datasets/default/*.json", {
+  const jsonFiles = await glob((process.env.CRAWLEE_STORAGE_DIR || './storage') + "/datasets/" + (process.env.CRAWLEE_DEFAULT_DATASET_ID || 'default') + "/*.json", {
     absolute: true,
   });
 

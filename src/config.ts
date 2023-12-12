@@ -8,11 +8,14 @@ export type Config = {
    */
   url: string;
   /**
+   * Pattern to record into
+   */
+  match: string | string[];
+  /**
    * Pattern to match against for links on a page to subsequently crawl
    * @example "https://www.builder.io/c/docs/**"
    * @default ""
    */
-  match: string | string[];
   matchToCrawl?: string | string[];
   /**
    * Selector to grab the inner text from

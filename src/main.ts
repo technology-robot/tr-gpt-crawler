@@ -1,4 +1,4 @@
-import { defaultConfig } from "../config.js";
+import { defaultConfig } from "../config.template.js";
 import { crawl, write } from "./core.js";
 
 await crawl(defaultConfig);

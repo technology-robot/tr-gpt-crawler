@@ -4,26 +4,30 @@ import { program } from "commander";
 import { Config } from "./config.js";
 import { crawl, write } from "./core.js";
 import { createRequire } from "node:module";
-import inquirer from "inquirer";
 
 const require = createRequire(import.meta.url);
 const { version, description } = require("../../package.json");
+import fs from 'fs';
 
 const messages = {
-  url: "What is the first URL of the website you want to crawl?",
-  match: "What is the URL pattern you want to match?",
-  selector: "What is the CSS selector you want to match?",
-  maxPagesToCrawl: "How many pages do you want to crawl?",
-  outputFileName: "What is the name of the output file?",
+  config: "What is the path of the configuration?",
+  output: "What is the output path?"
 };
 
-async function handler(options: Config) {
+async function handler(args: { config: fs.PathOrFileDescriptor; output: fs.PathOrFileDescriptor }) {
+  let options = JSON.parse(
+    fs.readFileSync(args.config, 'utf8'));
+
+  options.outputFileName = args.output;
+
   try {
     const {
       url,
       match,
-      selector,
+      matchToCrawl,
       maxPagesToCrawl: maxPagesToCrawlStr,
+      waitForSelectorTimeout,
+      selector,
       outputFileName,
     } = options;
 
@@ -33,45 +37,12 @@ async function handler(options: Config) {
     let config: Config = {
       url,
       match,
-      selector,
+      matchToCrawl,
       maxPagesToCrawl,
+      waitForSelectorTimeout,
+      selector,
       outputFileName,
     };
-
-    if (!config.url || !config.match || !config.selector) {
-      const questions = [];
-
-      if (!config.url) {
-        questions.push({
-          type: "input",
-          name: "url",
-          message: messages.url,
-        });
-      }
-
-      if (!config.match) {
-        questions.push({
-          type: "input",
-          name: "match",
-          message: messages.match,
-        });
-      }
-
-      if (!config.selector) {
-        questions.push({
-          type: "input",
-          name: "selector",
-          message: messages.selector,
-        });
-      }
-
-      const answers = await inquirer.prompt(questions);
-
-      config = {
-        ...config,
-        ...answers,
-      };
-    }
 
     await crawl(config);
     await write(config);
@@ -83,15 +54,8 @@ async function handler(options: Config) {
 program.version(version).description(description);
 
 program
-  .option("-u, --url <string>", messages.url, "")
-  .option("-m, --match <string>", messages.match, "")
-  .option("-s, --selector <string>", messages.selector, "")
-  .option("-m, --maxPagesToCrawl <number>", messages.maxPagesToCrawl, "50")
-  .option(
-    "-o, --outputFileName <string>",
-    messages.outputFileName,
-    "output.json",
-  )
-  .action(handler);
+.requiredOption("-c, --config <string>", messages.config)
+.requiredOption("-o, --output <string>", messages.output)
+.action(handler);
 
 program.parse();
