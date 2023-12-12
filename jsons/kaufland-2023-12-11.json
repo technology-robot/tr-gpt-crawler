@@ -1,0 +1,13 @@
+{
+    "url": "https://www.kaufland.de/",
+    "match": [
+        "https://www.kaufland.de/product/**"
+    ],
+    "matchToCrawl": [
+        "https://www.kaufland.de/*/",
+        "https://www.kaufland.de/product/**"
+    ],
+    "maxPagesToCrawl": 5e6,
+    "waitForSelectorTimeout": 10000,
+    "selector": "#__layout"
+}

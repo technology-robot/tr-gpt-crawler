@@ -1,35 +1,21 @@
 // For more information, see https://crawlee.dev/
 import { PlaywrightCrawler } from "crawlee";
-import { FileHandle, readFile, writeFile } from "fs/promises";
+import { readFile, writeFile } from "fs/promises";
 import { glob } from "glob";
 import { Config } from "./config.js";
 import { Page } from "playwright";
 import micromatch from 'micromatch';
-import { PathLike } from "fs";
-import { exit } from "process";
 
 let pageCounter = 0;
 
 export function getPageHtml(page: Page, selector = "body") {
   return page.evaluate((selector) => {
-    // function parseText(element: HTMLElement | Node | null) {
-    //   var text = "";
-    
-    //   if (element != null) {
-    //     for (var i = 0; i < element.childNodes.length; ++i)
-    //       if (element.childNodes[i].nodeType === Node.TEXT_NODE)
-    //         text += element.childNodes[i].textContent + '\n';
-    //   }
-    //   return "asdfadfasdf";
-    // }
-
     function textContent(rootNode: HTMLElement | Node | null) : string {
       var result = "";
       
       if (rootNode != null) {
         var childNodes = rootNode.childNodes,
-            len = childNodes.length,
-            result = '';
+          len = childNodes.length;
         
         for (var i = 0; i < len; i++) {
           if (childNodes[i].nodeType === Node.TEXT_NODE)
@@ -54,7 +40,7 @@ export function getPageHtml(page: Page, selector = "body") {
         null
       );
       let result = elements.iterateNext();
-      return result ? result.textContent || "" : "";
+      return result ? textContent(result) || "" : "";
     } else {
       // Handle as a CSS selector
       const element = document.querySelector(selector) as HTMLElement | null;

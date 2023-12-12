@@ -1,0 +1,13 @@
+{
+    "url": "https://www.aldi-onlineshop.de",
+    "match": [
+        "https://www.aldi-onlineshop.de/p/**"
+    ],
+    "matchToCrawl": [
+        "https://www.aldi-onlineshop.de/p/**",
+        "https://www.aldi-onlineshop.de/c/**"
+    ],
+    "maxPagesToCrawl": 5e6,
+    "waitForSelectorTimeout": 10000,
+    "selector": ".blended"
+}

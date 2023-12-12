@@ -22,6 +22,19 @@ bash crawl.sh {config path} {output path}
 
 ### Alternative methods
 
-#### [Running in a container with Docker](./containerapp/README.md)
+#### Running in a container with Docker
 
-To obtain the `output.json` with a containerized execution. Go into the `containerapp` directory. Modify the `config.ts` same as above, the `output.json`file should be generated in the data folder. Note : the `outputFileName` property in the `config.ts` file in containerapp folder is configured to work with the container.
+artifact_path="us-central1-docker.pkg.dev/technology-robot/aisha-for-product-recommendation/crawler:latest"
+docker build . -t $artifact_path \
+    --build-arg="CONF_JSON=jsons/rewe-2023-12-11.json" \
+    --build-arg="OUTPUT_CSV_GCS=gs://tr-aisha/product-recommendation/sample-rewe/output.csv"
+
+docker push $artifact_path
+
+gcloud builds submit --tag=$artifact_path
+
+gcloud run jobs create aisha-pd-crawl \
+    --image=$artifact_path \
+    --region=us-central1 \
+    --vpc-connector=egress \
+    --vpc-egress=all-traffic

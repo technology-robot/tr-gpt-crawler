@@ -1,0 +1,13 @@
+{
+    "url": "https://shop.rewe.de/",
+    "match": [
+        "https://shop.rewe.de/p/**"
+    ],
+    "matchToCrawl": [
+        "https://shop.rewe.de/c/**",
+        "https://shop.rewe.de/p/**"
+    ],
+    "maxPagesToCrawl": 5e6,
+    "waitForSelectorTimeout": 10000,
+    "selector": "#pdpr-product-details-component"
+}

@@ -9,5 +9,6 @@ storage
 
 # any output from the crawler
 *.json
+!jsons/*.json
 
 outputs
