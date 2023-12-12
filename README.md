@@ -24,7 +24,7 @@ bash crawl.sh {config path} {output path}
 
 #### Running in a container with Docker
 
-product=aldi
+product=lidl
 artifact_path="us-central1-docker.pkg.dev/technology-robot/aisha-for-product-recommendation/crawler-$product:latest"
 docker build . -t $artifact_path \
     --build-arg="CONF_JSON=jsons/$product-2023-12-11.json" \

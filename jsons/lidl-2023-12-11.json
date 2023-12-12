@@ -1,0 +1,13 @@
+{
+    "url": "https://www.lidl.de/",
+    "match": [
+        "https://www.lidl.de/p/**"
+    ],
+    "matchToCrawl": [
+        "https://www.lidl.de/c/**",
+        "https://www.lidl.de/p/**"
+    ],
+    "maxPagesToCrawl": 85e3,
+    "waitForSelectorTimeout": 10000,
+    "selector": "article.detail"
+}
