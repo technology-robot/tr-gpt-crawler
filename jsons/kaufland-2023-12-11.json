@@ -7,7 +7,7 @@
         "https://www.kaufland.de/*/",
         "https://www.kaufland.de/product/**"
     ],
-    "maxPagesToCrawl": 5e6,
+    "maxPagesToCrawl": 85e3,
     "waitForSelectorTimeout": 10000,
     "selector": "#__layout"
 }

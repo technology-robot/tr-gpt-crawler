@@ -7,7 +7,7 @@
         "https://www.aldi-onlineshop.de/p/**",
         "https://www.aldi-onlineshop.de/c/**"
     ],
-    "maxPagesToCrawl": 5e6,
+    "maxPagesToCrawl": 85e3,
     "waitForSelectorTimeout": 10000,
     "selector": ".blended"
 }
